@@ -423,5 +423,6 @@ Recent browser checks confirmed:
 
 ## License
 
-This project is currently private. Add a license before publishing or distributing the source code.
+Wendarca is developed as open-source software by Mutlu Kurt and released under the MIT License.
 
+See [LICENSE](LICENSE) for details.
