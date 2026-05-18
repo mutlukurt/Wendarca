@@ -1,5 +1,7 @@
 # Wendarca
 
+**Live application:** [https://wendarca.vercel.app/](https://wendarca.vercel.app/)
+
 Wendarca is a privacy-first, browser-based file conversion web app built with Next.js, React, TypeScript, and Tailwind CSS. It converts images, videos, and PDFs locally in the user’s browser without uploading files to a server.
 
 The product is designed as a polished utility for fast, practical file preparation: smaller web-ready images, WebM video output, PDF creation, PDF page extraction, PDF merging, and ZIP-based batch downloads.
