@@ -1,4 +1,9 @@
-import { SUPPORTED_IMAGE_EXTENSIONS, SUPPORTED_PDF_EXTENSIONS, SUPPORTED_VIDEO_EXTENSIONS } from "@/lib/constants";
+import {
+  SUPPORTED_IMAGE_EXTENSIONS,
+  SUPPORTED_PDF_EXTENSIONS,
+  SUPPORTED_PRESENTATION_EXTENSIONS,
+  SUPPORTED_VIDEO_EXTENSIONS,
+} from "@/lib/constants";
 
 export function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -26,6 +31,14 @@ export function isVideoFile(file: File): boolean {
 export function isPdfFile(file: File): boolean {
   const extension = getFileExtension(file.name);
   return file.type === "application/pdf" || SUPPORTED_PDF_EXTENSIONS.includes(extension as (typeof SUPPORTED_PDF_EXTENSIONS)[number]);
+}
+
+export function isPresentationFile(file: File): boolean {
+  const extension = getFileExtension(file.name);
+  return (
+    file.type === "application/vnd.openxmlformats-officedocument.presentationml.presentation" ||
+    SUPPORTED_PRESENTATION_EXTENSIONS.includes(extension as (typeof SUPPORTED_PRESENTATION_EXTENSIONS)[number])
+  );
 }
 
 export function replaceExtension(fileName: string, extension: string): string {

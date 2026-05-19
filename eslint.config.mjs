@@ -3,7 +3,7 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 const eslintConfig = [
   ...nextVitals,
   {
-    ignores: [".next/**", "node_modules/**", "out/**", "next-env.d.ts"],
+    ignores: [".next/**", "node_modules/**", "out/**", "next-env.d.ts", "public/wasm/**", "public/libreoffice/**"],
   },
 ];
 

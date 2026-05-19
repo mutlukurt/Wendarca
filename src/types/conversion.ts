@@ -1,14 +1,16 @@
 export type Language = "en" | "tr";
 
-export type FileKind = "image" | "video" | "pdf";
+export type FileKind = "image" | "video" | "pdf" | "presentation";
 
 export type ConversionStatus = "waiting" | "converting" | "done" | "failed";
 
-export type ConverterTab = "images" | "videos" | "pdfs" | "all";
+export type ConverterTab = "images" | "videos" | "pdfs" | "presentations" | "all";
 
 export type ImageOutputFormat = "webp" | "pdf";
 
 export type PdfAction = "to-png" | "to-jpeg" | "merge";
+
+export type PresentationAction = "separate" | "merged";
 
 export type VideoQuality = "balanced" | "smaller" | "higher";
 
@@ -49,4 +51,9 @@ export interface PdfConversionOptions {
 export interface VideoConversionOptions {
   quality: VideoQuality;
   maxWidth: MaxVideoWidth;
+}
+
+export interface PresentationConversionOptions {
+  action: PresentationAction;
+  quality: number;
 }

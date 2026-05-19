@@ -4,19 +4,31 @@ import { Archive, Download, Info, Loader2, RotateCcw, Sparkles } from "lucide-re
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Dictionary } from "@/i18n";
 import { convertImageToWebP } from "@/lib/imageConverter";
+import { convertImagesToPdf, convertPdfToImageZip, mergePdfsCompressed } from "@/lib/pdfConverter";
+import { convertPptxFilesToMergedPdf, convertPptxToPdf } from "@/lib/pptxConverter";
 import { createZipFromConvertedFiles } from "@/lib/zipUtils";
 import {
   createConversionId,
   getFileExtension,
   isImageFile,
   isPdfFile,
+  isPresentationFile,
   isVideoFile,
   replaceExtension,
 } from "@/lib/fileUtils";
-import type { ConvertedAsset, ConversionFile, ConverterTab, ImageOutputFormat, MaxVideoWidth, PdfAction, VideoQuality } from "@/types/conversion";
+import type {
+  ConvertedAsset,
+  ConversionFile,
+  ConverterTab,
+  ImageOutputFormat,
+  MaxVideoWidth,
+  PdfAction,
+  PresentationAction,
+  VideoQuality,
+} from "@/types/conversion";
 import { Dropzone } from "@/components/Dropzone";
 import { FileQueue } from "@/components/FileQueue";
-import { ImageControls, PdfControls, VideoControls } from "@/components/QualityControls";
+import { ImageControls, PdfControls, PresentationControls, VideoControls } from "@/components/QualityControls";
 
 interface ConverterPanelProps {
   dictionary: Dictionary;
@@ -29,7 +41,9 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
   const [imageQuality, setImageQuality] = useState(0.82);
   const [targetImageSizeKb, setTargetImageSizeKb] = useState<number | null>(null);
   const [pdfAction, setPdfAction] = useState<PdfAction>("merge");
-  const [pdfImageQuality, setPdfImageQuality] = useState(0.9);
+  const [pdfImageQuality, setPdfImageQuality] = useState(0.62);
+  const [presentationAction, setPresentationAction] = useState<PresentationAction>("separate");
+  const [presentationQuality, setPresentationQuality] = useState(0.62);
   const [videoQuality, setVideoQuality] = useState<VideoQuality>("balanced");
   const [maxWidth, setMaxWidth] = useState<MaxVideoWidth>("720");
   const [isConverting, setIsConverting] = useState(false);
@@ -64,6 +78,8 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
           ? files.filter((file) => file.kind === "video")
           : activeTab === "pdfs"
             ? files.filter((file) => file.kind === "pdf" || file.kind === "image")
+            : activeTab === "presentations"
+              ? files.filter((file) => file.kind === "presentation")
             : files;
 
     return scopedFiles.map((file) => ({
@@ -104,6 +120,12 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
 
           if (isPdfFile(file) && (activeTab === "pdfs" || activeTab === "all")) {
             accepted.push(createQueueItem(file, "pdf", imageOutput, pdfAction));
+            known.add(key);
+            return;
+          }
+
+          if (isPresentationFile(file) && (activeTab === "presentations" || activeTab === "all")) {
+            accepted.push(createQueueItem(file, "presentation", imageOutput, pdfAction));
             known.add(key);
             return;
           }
@@ -150,6 +172,7 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
       revokeBatchAsset();
       const pdfFiles = candidates.filter((file) => file.kind === "pdf");
       const imageFiles = candidates.filter((file) => file.kind === "image");
+      const presentationFiles = candidates.filter((file) => file.kind === "presentation");
       const batchedIds = new Set<string>();
 
       if ((activeTab === "pdfs" || activeTab === "all") && pdfAction === "merge" && pdfFiles.length > 0) {
@@ -160,6 +183,11 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
       if ((activeTab === "pdfs" || activeTab === "all") && imageOutput === "pdf" && imageFiles.length > 0) {
         await convertImageBatchToPdf(imageFiles);
         imageFiles.forEach((file) => batchedIds.add(file.id));
+      }
+
+      if (activeTab === "presentations" && presentationAction === "merged" && presentationFiles.length > 0) {
+        await convertPresentationMerge(presentationFiles);
+        presentationFiles.forEach((file) => batchedIds.add(file.id));
       }
 
       for (const item of candidates.filter((file) => !batchedIds.has(file.id))) {
@@ -194,7 +222,14 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
             ...file,
             status: "failed",
             progress: 100,
-            error: file.kind === "image" ? dictionary.converter.imageError : file.kind === "pdf" ? dictionary.converter.pdfError : dictionary.converter.videoError,
+            error:
+              file.kind === "image"
+                ? dictionary.converter.imageError
+                : file.kind === "pdf"
+                  ? dictionary.converter.pdfError
+                  : file.kind === "presentation"
+                    ? dictionary.converter.presentationError
+                    : dictionary.converter.videoError,
           }));
         }
       }
@@ -214,8 +249,13 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
     }
 
     if (item.kind === "pdf") {
-      const { convertPdfToImageZip } = await import("@/lib/pdfConverter");
       return convertPdfToImageZip(item.file, pdfAction === "to-png" ? "to-png" : "to-jpeg", pdfImageQuality, (progress) => {
+        updateFile(item.id, (file) => ({ ...file, progress }));
+      });
+    }
+
+    if (item.kind === "presentation") {
+      return convertPptxToPdf(item.file, presentationQuality, (progress) => {
         updateFile(item.id, (file) => ({ ...file, progress }));
       });
     }
@@ -226,8 +266,9 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
   const convertPdfMerge = async (items: ConversionFile[]) => {
     items.forEach((item) => updateFile(item.id, (file) => ({ ...file, status: "converting", progress: 10, error: undefined })));
     try {
-      const { mergePdfs } = await import("@/lib/pdfConverter");
-      const blob = await mergePdfs(items.map((item) => item.file));
+      const blob = await mergePdfsCompressed(items.map((item) => item.file), pdfImageQuality, (progress) => {
+        items.forEach((item) => updateFile(item.id, (file) => ({ ...file, progress })));
+      });
       const asset = createAsset(blob, "wendarca-merged.pdf");
       setBatchAssets((current) => [...current, asset]);
       items.forEach((item) => updateFile(item.id, (file) => ({ ...file, status: "done", progress: 100 })));
@@ -240,13 +281,29 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
   const convertImageBatchToPdf = async (items: ConversionFile[]) => {
     items.forEach((item) => updateFile(item.id, (file) => ({ ...file, status: "converting", progress: 10, error: undefined })));
     try {
-      const { convertImagesToPdf } = await import("@/lib/pdfConverter");
       const blob = await convertImagesToPdf(items.map((item) => item.file), pdfImageQuality);
       const asset = createAsset(blob, "wendarca-images.pdf");
       setBatchAssets((current) => [...current, asset]);
       items.forEach((item) => updateFile(item.id, (file) => ({ ...file, status: "done", progress: 100 })));
     } catch {
       items.forEach((item) => updateFile(item.id, (file) => ({ ...file, status: "failed", progress: 100, error: dictionary.converter.pdfError })));
+      setNotice(dictionary.converter.batchError);
+    }
+  };
+
+  const convertPresentationMerge = async (items: ConversionFile[]) => {
+    items.forEach((item) => updateFile(item.id, (file) => ({ ...file, status: "converting", progress: 10, error: undefined })));
+    try {
+      const blob = await convertPptxFilesToMergedPdf(items.map((item) => item.file), presentationQuality, (progress) => {
+        items.forEach((item) => updateFile(item.id, (file) => ({ ...file, progress })));
+      });
+      const asset = createAsset(blob, "wendarca-presentations.pdf");
+      setBatchAssets((current) => [...current, asset]);
+      items.forEach((item) => updateFile(item.id, (file) => ({ ...file, status: "done", progress: 100 })));
+    } catch {
+      items.forEach((item) =>
+        updateFile(item.id, (file) => ({ ...file, status: "failed", progress: 100, error: dictionary.converter.presentationError })),
+      );
       setNotice(dictionary.converter.batchError);
     }
   };
@@ -290,33 +347,39 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
     { id: "images", label: dictionary.converter.tabs.images },
     { id: "videos", label: dictionary.converter.tabs.videos },
     { id: "pdfs", label: dictionary.converter.tabs.pdfs },
+    { id: "presentations", label: dictionary.converter.tabs.presentations },
     { id: "all", label: dictionary.converter.tabs.all },
   ];
 
   return (
-    <section id="converter" className="container-nest py-12 md:py-16">
-      <div className="rounded-2xl border border-[#E8E1D6] bg-white p-5 shadow-premium md:p-7">
+    <section id="converter" className="container-nest py-12 md:py-18">
+      <div className="glass-card overflow-hidden rounded-[2rem] p-4 md:p-6">
+        <div className="mb-4 flex items-center gap-2 px-1 text-xs font-bold uppercase tracking-[0.18em] text-[#FB4D27]">
+          <span className="h-2 w-2 rounded-full bg-[#FB4D27]" aria-hidden="true" />
+          {dictionary.converter.workspaceLabel}
+        </div>
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-[#171717] md:text-3xl">{dictionary.converter.title}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#6B6B6B]">{dictionary.converter.subtitle}</p>
+            <h2 className="text-3xl font-semibold tracking-tight text-[#000000] md:text-4xl">{dictionary.converter.title}</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#797979] md:text-base">{dictionary.converter.subtitle}</p>
           </div>
-          <div className="rounded-2xl border border-[#E8E1D6] bg-[#FAF8F3] p-3 text-sm text-[#6B6B6B]">
-            <p className="font-semibold text-[#171717]">{dictionary.converter.supported}</p>
-            <p>{dictionary.converter.imageFormats}</p>
-            <p>{dictionary.converter.videoFormats}</p>
-            <p>{dictionary.converter.pdfFormats}</p>
+          <div className="grid gap-2 rounded-3xl border border-[#D8D8D8] bg-[#F2F2F2]/80 p-4 text-sm text-[#797979] shadow-sm sm:grid-cols-2 lg:w-[34rem]">
+            <p className="font-semibold text-[#000000] sm:col-span-2">{dictionary.converter.supported}</p>
+            <p className="rounded-2xl bg-white/70 px-3 py-2">{dictionary.converter.imageFormats}</p>
+            <p className="rounded-2xl bg-white/70 px-3 py-2">{dictionary.converter.videoFormats}</p>
+            <p className="rounded-2xl bg-white/70 px-3 py-2">{dictionary.converter.pdfFormats}</p>
+            <p className="rounded-2xl bg-white/70 px-3 py-2">{dictionary.converter.presentationFormats}</p>
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-2 rounded-2xl border border-[#E8E1D6] bg-[#FAF8F3] p-1">
+        <div className="mt-7 flex flex-wrap gap-2 rounded-3xl border border-[#D8D8D8] bg-[#EDEDED]/70 p-1.5 shadow-inner">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`min-h-10 flex-1 rounded-xl px-3 text-sm font-semibold transition sm:flex-none ${
-                activeTab === tab.id ? "bg-white text-[#171717] shadow-sm" : "text-[#6B6B6B] hover:text-[#171717]"
+              className={`min-h-11 flex-1 rounded-2xl px-4 text-sm font-semibold transition duration-300 sm:flex-none ${
+                activeTab === tab.id ? "bg-white text-[#000000] shadow-[0_10px_24px_rgba(31,41,51,0.10)]" : "text-[#797979] hover:bg-white/50 hover:text-[#000000]"
               }`}
               aria-pressed={activeTab === tab.id}
             >
@@ -352,7 +415,7 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
                   onMaxWidthChange={setMaxWidth}
                   disabled={isConverting}
                 />
-                <p className="flex items-start gap-2 text-sm text-[#6B6B6B]">
+                <p className="flex items-start gap-2 text-sm text-[#797979]">
                   <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#B7791F]" aria-hidden="true" />
                   {dictionary.converter.largeVideoNote}
                 </p>
@@ -370,8 +433,18 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
                 disabled={isConverting}
               />
             ) : null}
+            {activeTab === "presentations" ? (
+              <PresentationControls
+                dictionary={dictionary}
+                action={presentationAction}
+                onActionChange={setPresentationAction}
+                quality={presentationQuality}
+                onQualityChange={setPresentationQuality}
+                disabled={isConverting}
+              />
+            ) : null}
             {activeTab === "all" ? (
-              <div className="rounded-2xl border border-[#E8E1D6] bg-[#FDFCF8] p-4 text-sm leading-6 text-[#6B6B6B]">
+              <div className="rounded-3xl border border-[#D8D8D8] bg-[#FFFFFF]/90 p-5 text-sm leading-6 text-[#797979] shadow-sm">
                 {dictionary.converter.allModeNote}
               </div>
             ) : null}
@@ -383,7 +456,7 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
                 type="button"
                 onClick={convertAll}
                 disabled={isConverting || activeFiles.length === 0}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#2F5D50] px-5 text-sm font-semibold text-white transition hover:bg-[#264B41] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#FB4D27] px-5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#C93418] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isConverting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Sparkles className="h-4 w-4" aria-hidden="true" />}
                 {isPreparingVideo ? dictionary.converter.preparingVideo : isConverting ? dictionary.converter.converting : dictionary.converter.convertAll}
@@ -392,7 +465,7 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
                 type="button"
                 onClick={clearAll}
                 disabled={isConverting || activeFiles.length === 0}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#DCD3C4] bg-white px-5 text-sm font-semibold text-[#1F2933] transition hover:border-[#BFB4A6] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[#D8D8D8] bg-white/86 px-5 text-sm font-semibold text-[#000000] shadow-sm transition hover:-translate-y-0.5 hover:border-[#FB4D27] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <RotateCcw className="h-4 w-4" aria-hidden="true" />
                 {dictionary.converter.clearAll}
@@ -401,27 +474,27 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
                 type="button"
                 onClick={downloadZip}
                 disabled={isConverting || (files.every((file) => !file.converted) && batchAssets.length === 0)}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#DCD3C4] bg-white px-5 text-sm font-semibold text-[#1F2933] transition hover:border-[#BFB4A6] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[#D8D8D8] bg-white/86 px-5 text-sm font-semibold text-[#000000] shadow-sm transition hover:-translate-y-0.5 hover:border-[#FB4D27] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Archive className="h-4 w-4" aria-hidden="true" />
                 {dictionary.converter.downloadZip}
               </button>
             </div>
             {notice ? (
-              <div className="rounded-2xl border border-[#E8E1D6] bg-[#FAF8F3] px-4 py-3 text-sm text-[#6B6B6B]" role="status">
+              <div className="rounded-3xl border border-[#D8D8D8] bg-[#F2F2F2]/86 px-4 py-3 text-sm text-[#797979] shadow-sm" role="status">
                 {notice}
               </div>
             ) : null}
             {batchAssets.length > 0 ? (
-              <div className="space-y-3 rounded-2xl border border-[#CDE8DA] bg-[#F0FAF4] p-4 text-sm text-[#2F7D5A]">
-                <p className="font-semibold text-[#1F2933]">{dictionary.converter.batchOutput}</p>
+              <div className="space-y-3 rounded-3xl border border-[#FFD0C2] bg-[#FFF1EC] p-4 text-sm text-[#FB4D27] shadow-sm">
+                <p className="font-semibold text-[#000000]">{dictionary.converter.batchOutput}</p>
                 {batchAssets.map((asset) => (
                   <div key={asset.url} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <p>{asset.fileName}</p>
                     <a
                       href={asset.url}
                       download={asset.fileName}
-                      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#2F5D50] px-4 text-sm font-semibold text-white"
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#FB4D27] px-4 text-sm font-semibold text-white"
                     >
                       <Download className="h-4 w-4" aria-hidden="true" />
                       {dictionary.converter.downloadBatch}
@@ -438,7 +511,7 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
   );
 }
 
-function createQueueItem(file: File, kind: "image" | "video" | "pdf", imageOutput: ImageOutputFormat, pdfAction: PdfAction): ConversionFile {
+function createQueueItem(file: File, kind: "image" | "video" | "pdf" | "presentation", imageOutput: ImageOutputFormat, pdfAction: PdfAction): ConversionFile {
   return {
     id: createConversionId(),
     file,
@@ -452,9 +525,10 @@ function createQueueItem(file: File, kind: "image" | "video" | "pdf", imageOutpu
   };
 }
 
-function targetFormatForKind(kind: "image" | "video" | "pdf", imageOutput: ImageOutputFormat, pdfAction: PdfAction): ConversionFile["targetFormat"] {
+function targetFormatForKind(kind: "image" | "video" | "pdf" | "presentation", imageOutput: ImageOutputFormat, pdfAction: PdfAction): ConversionFile["targetFormat"] {
   if (kind === "image") return imageOutput;
   if (kind === "video") return "webm";
+  if (kind === "presentation") return "pdf";
   if (pdfAction === "merge") return "pdf";
   return "zip";
 }
@@ -463,6 +537,7 @@ function isFileRelevantForTab(file: ConversionFile, tab: ConverterTab): boolean 
   if (tab === "images") return file.kind === "image";
   if (tab === "videos") return file.kind === "video";
   if (tab === "pdfs") return file.kind === "pdf" || file.kind === "image";
+  if (tab === "presentations") return file.kind === "presentation";
   return true;
 }
 
@@ -471,7 +546,8 @@ function dropzoneCopyForTab(dictionary: Dictionary, tab: ConverterTab) {
     images: ".png,.jpg,.jpeg,image/png,image/jpeg",
     videos: ".mp4,.mov,.avi,.mkv,.m4v,video/*",
     pdfs: ".png,.jpg,.jpeg,.pdf,image/png,image/jpeg,application/pdf",
-    all: ".png,.jpg,.jpeg,.pdf,.mp4,.mov,.avi,.mkv,.m4v,image/png,image/jpeg,application/pdf,video/*",
+    presentations: ".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    all: ".png,.jpg,.jpeg,.pdf,.pptx,.mp4,.mov,.avi,.mkv,.m4v,image/png,image/jpeg,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,video/*",
   } satisfies Record<ConverterTab, string>;
 
   return {

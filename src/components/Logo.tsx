@@ -1,14 +1,18 @@
 import Image from "next/image";
 
-export function Logo() {
+interface LogoProps {
+  className?: string;
+}
+
+export function Logo({ className = "h-14 w-auto object-contain" }: LogoProps) {
   return (
     <Image
       src="/brand/wendarca-logo.webp"
       alt="Wendarca"
-      width={982}
-      height={320}
+      width={732}
+      height={239}
       priority
-      className="h-14 w-auto object-contain"
+      className={className}
     />
   );
 }

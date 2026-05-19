@@ -9,7 +9,10 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { HowItWorks } from "@/components/HowItWorks";
+import { MouseGlowBackground } from "@/components/MouseGlowBackground";
+import { OpenSourceSection } from "@/components/OpenSourceSection";
 import { PrivacySection } from "@/components/PrivacySection";
+import { SupportedFormats } from "@/components/SupportedFormats";
 
 export function HomePage() {
   const [language, setLanguage] = useState<Language>("en");
@@ -21,12 +24,15 @@ export function HomePage() {
 
   return (
     <>
+      <MouseGlowBackground />
       <Header dictionary={dictionary} language={language} onLanguageChange={setLanguage} />
       <main>
         <Hero dictionary={dictionary} />
         <ConverterPanel dictionary={dictionary} />
         <PrivacySection dictionary={dictionary} />
         <HowItWorks dictionary={dictionary} />
+        <SupportedFormats dictionary={dictionary} />
+        <OpenSourceSection dictionary={dictionary} />
         <FAQ dictionary={dictionary} />
       </main>
       <Footer dictionary={dictionary} />

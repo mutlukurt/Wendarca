@@ -1,5 +1,6 @@
 import { PDFDocument } from "pdf-lib";
 import JSZip from "jszip";
+import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import type { PdfAction } from "@/types/conversion";
 
 type PdfImageOutput = Extract<PdfAction, "to-png" | "to-jpeg">;
@@ -52,20 +53,70 @@ export async function mergePdfs(files: File[]): Promise<Blob> {
   return new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
 }
 
+export async function mergePdfsCompressed(
+  files: File[],
+  quality: number,
+  onProgress: (progress: number) => void,
+): Promise<Blob> {
+  const merged = await PDFDocument.create();
+  const totalPages = await countPdfPages(files);
+  let renderedPages = 0;
+
+  for (const file of files) {
+    const pdf = await loadPdf(file);
+
+    try {
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+        const page = await pdf.getPage(pageNumber);
+        const baseViewport = page.getViewport({ scale: 1 });
+        const renderScale = compressedMergeScaleForPage(baseViewport.width, quality);
+        const viewport = page.getViewport({ scale: renderScale });
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+
+        if (!context) {
+          throw new Error("Canvas is not available in this browser.");
+        }
+
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        await page.render({ canvas, canvasContext: context, viewport }).promise;
+
+        const jpegBlob = await canvasToBlob(canvas, "image/jpeg", compressedMergeJpegQuality(quality));
+        const jpegImage = await merged.embedJpg(await jpegBlob.arrayBuffer());
+        const pdfPage = merged.addPage([jpegImage.width, jpegImage.height]);
+        pdfPage.drawImage(jpegImage, {
+          x: 0,
+          y: 0,
+          width: jpegImage.width,
+          height: jpegImage.height,
+        });
+
+        renderedPages += 1;
+        onProgress(Math.max(10, Math.round((renderedPages / Math.max(totalPages, 1)) * 100)));
+
+        canvas.width = 1;
+        canvas.height = 1;
+      }
+    } finally {
+      await pdf.destroy();
+    }
+  }
+
+  const bytes = await merged.save({ useObjectStreams: true });
+  return new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" });
+}
+
 export async function convertPdfToImageZip(
   file: File,
   output: PdfImageOutput,
   quality: number,
   onProgress: (progress: number) => void,
 ): Promise<Blob> {
-  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    "pdfjs-dist/legacy/build/pdf.worker.mjs",
-    import.meta.url,
-  ).toString();
-
-  const documentTask = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
-  const pdf = (await documentTask.promise) as unknown as RenderablePdf;
+  const pdf = await loadPdf(file);
   const zip = new JSZip();
   const mimeType = output === "to-png" ? "image/png" : "image/jpeg";
   const extension = output === "to-png" ? "png" : "jpg";
@@ -96,6 +147,27 @@ export async function convertPdfToImageZip(
   }
 
   return zip.generateAsync({ type: "blob" });
+}
+
+async function loadPdf(file: File): Promise<RenderablePdf> {
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    "pdfjs-dist/legacy/build/pdf.worker.mjs",
+    import.meta.url,
+  ).toString();
+  const documentTask = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
+  return (await documentTask.promise) as unknown as RenderablePdf;
+}
+
+async function countPdfPages(files: File[]): Promise<number> {
+  let pages = 0;
+
+  for (const file of files) {
+    const pdf = await loadPdf(file);
+    pages += pdf.numPages;
+    await pdf.destroy();
+  }
+
+  return pages;
 }
 
 async function imageFileToPdfBytes(file: File, quality: number): Promise<Uint8Array> {
@@ -147,6 +219,18 @@ function closeBitmap(bitmap: ImageBitmap | HTMLImageElement): void {
 
 function renderScaleForQuality(quality: number): number {
   return 1 + quality * 2;
+}
+
+function compressedMergeMaxWidthForQuality(quality: number): number {
+  return Math.round(620 + quality * 980);
+}
+
+function compressedMergeJpegQuality(quality: number): number {
+  return Math.max(0.18, Math.min(0.82, quality * 0.78));
+}
+
+function compressedMergeScaleForPage(pageWidth: number, quality: number): number {
+  return Math.min(1.45, compressedMergeMaxWidthForQuality(quality) / pageWidth);
 }
 
 function baseName(fileName: string): string {

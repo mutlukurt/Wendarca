@@ -27,3 +27,7 @@ pnpm-debug.log*
 coverage/
 playwright-report/
 test-results/
+
+# generated browser engine assets
+public/wasm/
+public/libreoffice/

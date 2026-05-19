@@ -1,15 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --background: #faf8f3;
-  --foreground: #171717;
+  --background: #f2f2f2;
+  --foreground: #000000;
   --surface: #ffffff;
-  --muted: #6b6b6b;
-  --border: #e8e1d6;
-  --accent: #2f5d50;
-  --accent-dark: #1f2933;
-  --success: #2f7d5a;
-  --warning: #b7791f;
+  --muted: #797979;
+  --border: #d8d8d8;
+  --accent: #fb4d27;
+  --accent-soft: #fff1ec;
+  --accent-dark: #000000;
+  --success: #fb4d27;
+  --warning: #c45b1e;
   --error: #b42318;
 }
 
@@ -30,7 +31,10 @@ html {
 
 body {
   margin: 0;
-  background: var(--background);
+  background:
+    radial-gradient(circle at 18% -8%, rgba(251, 77, 39, 0.18), transparent 28rem),
+    radial-gradient(circle at 88% 10%, rgba(0, 0, 0, 0.10), transparent 30rem),
+    var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
@@ -45,15 +49,80 @@ button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible {
-  outline: 2px solid #2f5d50;
+  outline: 2px solid #fb4d27;
   outline-offset: 3px;
 }
 
 .shadow-premium {
-  box-shadow: 0 18px 50px rgba(31, 41, 51, 0.08);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.09);
+}
+
+.shadow-soft {
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.10), 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .container-nest {
-  width: min(1160px, calc(100% - 32px));
+  width: min(1220px, calc(100% - 32px));
   margin-inline: auto;
+}
+
+.glass-card {
+  border: 1px solid rgba(216, 216, 216, 0.92);
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.dot-grid {
+  background-image: radial-gradient(rgba(251, 77, 39, 0.18) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes flow {
+  from { stroke-dashoffset: 40; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-reveal-up {
+  animation: reveal-up 700ms ease both;
+}
+
+.animate-float-soft {
+  animation: float-soft 6s ease-in-out infinite;
+}
+
+.animate-flow {
+  stroke-dasharray: 8 12;
+  animation: flow 1.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

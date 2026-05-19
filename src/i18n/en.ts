@@ -6,14 +6,18 @@ export const en = {
     privacy: "Privacy",
     faq: "FAQ",
     github: "Project link",
+    menu: "Open menu",
+    closeMenu: "Close menu",
+    cta: "Start converting",
   },
   hero: {
     eyebrow: "Private browser-based conversion",
-    title: "Convert images, PDFs, and videos without uploading them.",
+    title: "Convert files locally. Keep them private.",
     subtitle:
-      "Create WebP, WebM, PDFs, page images, and merged documents directly in your browser.",
+      "Create WebP, WebM, PDFs, page images, and presentation PDFs directly in your browser — no uploads, no accounts, no server storage.",
     primary: "Start converting",
     secondary: "View privacy notes",
+    trust: ["No uploads", "No account", "Runs in your browser", "Batch downloads"],
   },
   illustration: {
     images: "Images",
@@ -22,20 +26,25 @@ export const en = {
     output: "Optimized output",
     compress: "Smaller",
     ready: "ready",
+    local: "local",
+    input: "Input files",
   },
   converter: {
     title: "Converter",
     subtitle: "Drop files, choose quality, and convert locally on your device.",
+    workspaceLabel: "Local converter workspace",
     tabs: {
       images: "Images",
       videos: "Videos to WebM",
       pdfs: "PDF tools",
+      presentations: "PPTX to PDF",
       all: "All files",
     },
     supported: "Supported formats",
     imageFormats: "Images: PNG, JPG, JPEG",
     videoFormats: "Videos: MP4, MOV, AVI, MKV, M4V",
     pdfFormats: "PDF: PNG/JPEG to PDF, PDF to PNG/JPEG, merge PDFs",
+    presentationFormats: "Presentations: PPTX to PDF",
     dropTitle: "Drop image, video, or PDF files here",
     dropActive: "Release to add files",
     dropSubtitle: "or click to browse your device",
@@ -55,8 +64,13 @@ export const en = {
         active: "Release to add PDF files or images",
         subtitle: "Merge PDFs, render PDF pages, or create PDF from PNG/JPEG.",
       },
+      presentations: {
+        title: "Drop PPTX files for PDF conversion",
+        active: "Release to add PPTX files",
+        subtitle: "Convert presentations to separate PDFs or one compressed PDF.",
+      },
       all: {
-        title: "Drop image, video, or PDF files here",
+        title: "Drop image, video, PDF, or PPTX files here",
         active: "Release to add files",
         subtitle: "Use dedicated tabs for tool-specific controls.",
       },
@@ -66,7 +80,7 @@ export const en = {
     duplicate: "File already added:",
     queueTitle: "File queue",
     emptyQueue: "Your selected files will appear here.",
-    allModeNote: "All files mode keeps controls minimal. Use each dedicated tab for detailed WebP, WebM, or PDF settings.",
+    allModeNote: "All files mode keeps controls minimal. Use each dedicated tab for detailed WebP, WebM, PDF, or PPTX settings.",
     largeVideoNote: "Large videos may take longer depending on your device.",
     convertAll: "Convert all",
     clearAll: "Clear all",
@@ -84,6 +98,7 @@ export const en = {
     imageError: "This image could not be converted. Try another PNG or JPG file.",
     videoError: "This video could not be converted. Large or unusual files may exceed browser limits.",
     pdfError: "This PDF task could not be completed. Encrypted or very large PDFs may exceed browser limits.",
+    presentationError: "This PPTX file could not be converted. Complex animations, charts, or unsupported slide objects may not render in the browser.",
     batchError: "This batch task could not be completed.",
     status: {
       waiting: "Waiting",
@@ -111,11 +126,18 @@ export const en = {
     targetImageSize: "Target image size",
     targetImageSizeHint: "Optional. If needed, Wendarca reduces quality first, then dimensions.",
     pdfAction: "PDF action",
-    pdfImageQuality: "PDF output quality",
+    pdfImageQuality: "PDF compression quality",
     pdfActions: {
       "to-png": "PDF to PNG",
       "to-jpeg": "PDF to JPEG",
       merge: "Merge PDFs",
+    },
+    presentationAction: "PPTX output",
+    presentationQuality: "PPTX PDF compression quality",
+    presentationHint: "PPTX conversion uses a local LibreOffice WebAssembly engine for high-fidelity PDF export. First use may take longer while the engine loads.",
+    presentationActions: {
+      separate: "Separate PDFs",
+      merged: "Single merged PDF",
     },
     videoQuality: "Video quality",
     maxWidth: "Max width",
@@ -127,7 +149,7 @@ export const en = {
   privacy: {
     title: "Privacy-first by design",
     subtitle:
-      "Your files stay on your device. Wendarca does not upload your images, PDFs, or videos to a server.",
+      "Your files stay on your device. Wendarca processes conversions inside your browser using client-side technologies such as canvas, WebAssembly, and local file APIs.",
     local: {
       title: "Local processing",
       text: "Conversion runs in your browser using canvas and WebAssembly.",
@@ -140,12 +162,16 @@ export const en = {
       title: "Batch-friendly workflow",
       text: "Convert multiple files and download outputs one by one or as a ZIP.",
     },
+    storage: {
+      title: "No cloud storage",
+      text: "Wendarca does not store your files, converted outputs, or conversion history.",
+    },
   },
   how: {
     title: "How it works",
     steps: [
-      { title: "Drop your files", text: "Add one file or a full batch of supported images, PDFs, and videos." },
-      { title: "Choose output", text: "Pick WebP, WebM, PDF creation, page rendering, or PDF merge." },
+      { title: "Drop your files", text: "Add one file or a full batch of supported images, PDFs, presentations, and videos." },
+      { title: "Choose output", text: "Pick WebP, WebM, PDF creation, PPTX conversion, page rendering, or PDF merge." },
       { title: "Convert and download", text: "Download individual results, merged documents, or ZIP packages." },
     ],
   },
@@ -164,16 +190,41 @@ export const en = {
       {
         question: "Which formats are supported?",
         answer:
-          "PNG/JPG/JPEG to WebP or PDF, PDF to PNG/JPEG, PDF merge, and common video formats like MP4/MOV/MKV/AVI/M4V to WebM.",
+          "PNG/JPG/JPEG to WebP or PDF, PDF to PNG/JPEG, PPTX to PDF, PDF merge, and common video formats like MP4/MOV/MKV/AVI/M4V to WebM.",
+      },
+      {
+        question: "Does Wendarca store my files?",
+        answer: "No. Wendarca has no account system, database, or server-side file storage for your conversions.",
       },
     ],
   },
+  formats: {
+    eyebrow: "Capabilities",
+    title: "One workspace for everyday conversion tasks.",
+    subtitle: "Dedicated tools keep each workflow focused while batch downloads keep larger jobs tidy.",
+    items: [
+      { title: "Images", text: "PNG, JPG, and JPEG to optimized WebP.", meta: "PNG · JPG · JPEG -> WebP" },
+      { title: "Videos", text: "Common video formats to web-friendly WebM.", meta: "MP4 · MOV · AVI · MKV · M4V -> WebM" },
+      { title: "PDFs", text: "Create PDFs, render pages, and merge compressed documents.", meta: "PDF · PNG · JPEG" },
+      { title: "Presentations", text: "Convert PPTX files to PDF with a local LibreOffice WebAssembly engine.", meta: "PPTX -> PDF" },
+      { title: "Batch downloads", text: "Download individual files, merged outputs, or ZIP archives.", meta: "PDF · WebP · WebM · ZIP" },
+    ],
+  },
+  openSource: {
+    eyebrow: "Open-source friendly",
+    title: "Built for fast, private file workflows.",
+    text: "Wendarca is designed as a transparent local-first utility: no accounts, no upload pipeline, no database. The interface stays focused on helping people prepare files quickly and privately.",
+    primary: "View on GitHub",
+    secondary: "Read privacy notes",
+  },
   footer: {
     privacy: "Private local conversion. No uploads, no accounts, no database.",
+    built: "Built for fast, private file workflows.",
     links: {
       converter: "Converter",
       privacy: "Privacy",
       faq: "FAQ",
+      github: "GitHub",
     },
   },
 };

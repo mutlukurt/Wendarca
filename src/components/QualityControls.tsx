@@ -1,7 +1,7 @@
 "use client";
 
 import type { Dictionary } from "@/i18n";
-import type { ImageOutputFormat, MaxVideoWidth, PdfAction, VideoQuality } from "@/types/conversion";
+import type { ImageOutputFormat, MaxVideoWidth, PdfAction, PresentationAction, VideoQuality } from "@/types/conversion";
 
 interface ImageControlsProps {
   dictionary: Dictionary;
@@ -32,6 +32,15 @@ interface PdfControlsProps {
   disabled: boolean;
 }
 
+interface PresentationControlsProps {
+  dictionary: Dictionary;
+  action: PresentationAction;
+  onActionChange: (action: PresentationAction) => void;
+  quality: number;
+  onQualityChange: (quality: number) => void;
+  disabled: boolean;
+}
+
 export function ImageControls({
   dictionary,
   imageQuality,
@@ -42,13 +51,13 @@ export function ImageControls({
 }: ImageControlsProps) {
   return (
     <div className="space-y-3">
-      <div className="rounded-2xl border border-[#E8E1D6] bg-[#FDFCF8] p-4">
+      <div className="rounded-2xl border border-[#D8D8D8] bg-[#FFFFFF] p-4">
         <label
           htmlFor="image-quality"
-          className="flex items-center justify-between gap-3 text-sm font-semibold text-[#171717]"
+          className="flex items-center justify-between gap-3 text-sm font-semibold text-[#000000]"
         >
           {dictionary.controls.imageQuality}
-          <span className="font-mono text-xs text-[#6B6B6B]">{Math.round(imageQuality * 100)}%</span>
+          <span className="font-mono text-xs text-[#797979]">{Math.round(imageQuality * 100)}%</span>
         </label>
         <input
           id="image-quality"
@@ -59,12 +68,12 @@ export function ImageControls({
           value={imageQuality}
           disabled={disabled}
           onChange={(event) => onImageQualityChange(Number(event.target.value))}
-          className="mt-4 w-full accent-[#2F5D50]"
+          className="mt-4 w-full accent-[#FB4D27]"
           aria-label={dictionary.controls.qualityValue}
         />
       </div>
 
-      <label className="flex flex-col gap-2 rounded-2xl border border-[#E8E1D6] bg-[#FDFCF8] p-4 text-sm font-semibold text-[#171717]">
+      <label className="flex flex-col gap-2 rounded-2xl border border-[#D8D8D8] bg-[#FFFFFF] p-4 text-sm font-semibold text-[#000000]">
         <span>{dictionary.controls.targetImageSize}</span>
         <div className="flex items-center gap-3">
           <input
@@ -80,12 +89,12 @@ export function ImageControls({
               onTargetImageSizeKbChange(value ? Math.max(20, Number(value)) : null);
             }}
             placeholder="100"
-            className="h-11 w-32 rounded-xl border border-[#E8E1D6] bg-white px-3 text-sm font-medium text-[#171717]"
+            className="h-11 w-32 rounded-xl border border-[#D8D8D8] bg-white px-3 text-sm font-medium text-[#000000]"
             aria-label={dictionary.controls.targetImageSize}
           />
-          <span className="text-sm font-medium text-[#6B6B6B]">KB</span>
+          <span className="text-sm font-medium text-[#797979]">KB</span>
         </div>
-        <span className="text-xs font-medium leading-5 text-[#6B6B6B]">{dictionary.controls.targetImageSizeHint}</span>
+        <span className="text-xs font-medium leading-5 text-[#797979]">{dictionary.controls.targetImageSizeHint}</span>
       </label>
     </div>
   );
@@ -105,11 +114,11 @@ export function VideoControls({
   return (
     <div className="space-y-3">
       <div
-        className="rounded-2xl border border-[#E8E1D6] bg-[#FDFCF8] p-4"
+        className="rounded-2xl border border-[#D8D8D8] bg-[#FFFFFF] p-4"
         role="group"
         aria-labelledby="video-quality-label"
       >
-        <p id="video-quality-label" className="text-sm font-semibold text-[#171717]">
+        <p id="video-quality-label" className="text-sm font-semibold text-[#000000]">
           {dictionary.controls.videoQuality}
         </p>
         <div className="flex flex-wrap gap-2">
@@ -121,8 +130,8 @@ export function VideoControls({
               onClick={() => onVideoQualityChange(quality)}
               className={`mt-3 inline-flex min-h-10 items-center justify-center rounded-full border px-4 text-sm font-medium leading-none transition ${
                 videoQuality === quality
-                  ? "border-[#1F2933] bg-[#1F2933] text-white"
-                  : "border-[#E8E1D6] bg-white text-[#6B6B6B] hover:text-[#171717]"
+                  ? "border-[#000000] bg-[#000000] text-white"
+                  : "border-[#D8D8D8] bg-white text-[#797979] hover:text-[#000000]"
               }`}
               aria-pressed={videoQuality === quality}
             >
@@ -132,13 +141,13 @@ export function VideoControls({
         </div>
       </div>
 
-      <label className="flex flex-col gap-3 rounded-2xl border border-[#E8E1D6] bg-[#FDFCF8] p-4 text-sm font-semibold text-[#171717] sm:flex-row sm:items-center sm:justify-between">
+      <label className="flex flex-col gap-3 rounded-2xl border border-[#D8D8D8] bg-[#FFFFFF] p-4 text-sm font-semibold text-[#000000] sm:flex-row sm:items-center sm:justify-between">
         <span>{dictionary.controls.maxWidth}</span>
         <select
           value={maxWidth}
           disabled={disabled}
           onChange={(event) => onMaxWidthChange(event.target.value as MaxVideoWidth)}
-          className="h-11 w-full rounded-xl border border-[#E8E1D6] bg-white px-3 text-sm font-medium text-[#171717] sm:w-44"
+          className="h-11 w-full rounded-xl border border-[#D8D8D8] bg-white px-3 text-sm font-medium text-[#000000] sm:w-44"
         >
           {widths.map((width) => (
             <option key={width} value={width}>
@@ -166,8 +175,8 @@ export function PdfControls({
 
   return (
     <div className="space-y-3">
-      <div className="rounded-2xl border border-[#E8E1D6] bg-[#FDFCF8] p-4">
-        <p className="text-sm font-semibold text-[#171717]">{dictionary.controls.imageOutput}</p>
+      <div className="rounded-2xl border border-[#D8D8D8] bg-[#FFFFFF] p-4">
+        <p className="text-sm font-semibold text-[#000000]">{dictionary.controls.imageOutput}</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {imageOutputs.map((format) => (
             <button
@@ -177,8 +186,8 @@ export function PdfControls({
               onClick={() => onImageOutputChange(format)}
               className={`inline-flex min-h-10 items-center justify-center rounded-full border px-4 text-sm font-medium leading-none transition ${
                 imageOutput === format
-                  ? "border-[#1F2933] bg-[#1F2933] text-white"
-                  : "border-[#E8E1D6] bg-white text-[#6B6B6B] hover:text-[#171717]"
+                  ? "border-[#000000] bg-[#000000] text-white"
+                  : "border-[#D8D8D8] bg-white text-[#797979] hover:text-[#000000]"
               }`}
               aria-pressed={imageOutput === format}
             >
@@ -188,8 +197,8 @@ export function PdfControls({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-[#E8E1D6] bg-[#FDFCF8] p-4">
-        <p className="text-sm font-semibold text-[#171717]">{dictionary.controls.pdfAction}</p>
+      <div className="rounded-2xl border border-[#D8D8D8] bg-[#FFFFFF] p-4">
+        <p className="text-sm font-semibold text-[#000000]">{dictionary.controls.pdfAction}</p>
         <div className="mt-3 flex flex-wrap gap-2">
           {pdfActions.map((action) => (
             <button
@@ -199,8 +208,8 @@ export function PdfControls({
               onClick={() => onPdfActionChange(action)}
               className={`inline-flex min-h-10 items-center justify-center rounded-full border px-4 text-sm font-medium leading-none transition ${
                 pdfAction === action
-                  ? "border-[#1F2933] bg-[#1F2933] text-white"
-                  : "border-[#E8E1D6] bg-white text-[#6B6B6B] hover:text-[#171717]"
+                  ? "border-[#000000] bg-[#000000] text-white"
+                  : "border-[#D8D8D8] bg-white text-[#797979] hover:text-[#000000]"
               }`}
               aria-pressed={pdfAction === action}
             >
@@ -209,21 +218,75 @@ export function PdfControls({
           ))}
         </div>
 
-        <label className="mt-4 flex items-center justify-between gap-3 text-sm font-semibold text-[#171717]">
+        <label className="mt-4 flex items-center justify-between gap-3 text-sm font-semibold text-[#000000]">
           {dictionary.controls.pdfImageQuality}
-          <span className="font-mono text-xs text-[#6B6B6B]">{Math.round(pdfImageQuality * 100)}%</span>
+          <span className="font-mono text-xs text-[#797979]">{Math.round(pdfImageQuality * 100)}%</span>
         </label>
         <input
           type="range"
-          min="0.4"
+          min="0.2"
           max="1"
           step="0.01"
           value={pdfImageQuality}
-          disabled={disabled || pdfAction === "merge"}
+          disabled={disabled}
           onChange={(event) => onPdfImageQualityChange(Number(event.target.value))}
-          className="mt-3 w-full accent-[#2F5D50] disabled:opacity-50"
+          className="mt-3 w-full accent-[#FB4D27] disabled:opacity-50"
           aria-label={dictionary.controls.pdfImageQuality}
         />
+      </div>
+    </div>
+  );
+}
+
+export function PresentationControls({
+  dictionary,
+  action,
+  onActionChange,
+  quality,
+  onQualityChange,
+  disabled,
+}: PresentationControlsProps) {
+  const actions: PresentationAction[] = ["separate", "merged"];
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-2xl border border-[#D8D8D8] bg-[#FFFFFF] p-4">
+        <p className="text-sm font-semibold text-[#000000]">{dictionary.controls.presentationAction}</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {actions.map((item) => (
+            <button
+              key={item}
+              type="button"
+              disabled={disabled}
+              onClick={() => onActionChange(item)}
+              className={`inline-flex min-h-10 items-center justify-center rounded-full border px-4 text-sm font-medium leading-none transition ${
+                action === item
+                  ? "border-[#000000] bg-[#000000] text-white"
+                  : "border-[#D8D8D8] bg-white text-[#797979] hover:text-[#000000]"
+              }`}
+              aria-pressed={action === item}
+            >
+              {dictionary.controls.presentationActions[item]}
+            </button>
+          ))}
+        </div>
+
+        <label className="mt-4 flex items-center justify-between gap-3 text-sm font-semibold text-[#000000]">
+          {dictionary.controls.presentationQuality}
+          <span className="font-mono text-xs text-[#797979]">{Math.round(quality * 100)}%</span>
+        </label>
+        <input
+          type="range"
+          min="0.2"
+          max="1"
+          step="0.01"
+          value={quality}
+          disabled={disabled}
+          onChange={(event) => onQualityChange(Number(event.target.value))}
+          className="mt-3 w-full accent-[#FB4D27] disabled:opacity-50"
+          aria-label={dictionary.controls.presentationQuality}
+        />
+        <p className="mt-3 text-xs font-medium leading-5 text-[#797979]">{dictionary.controls.presentationHint}</p>
       </div>
     </div>
   );

@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Wendarca — Local Image & Video Converter",
+  title: "Wendarca — Local File Converter",
   description:
-    "Convert images, PDFs, and videos directly in your browser without uploading files. Create WebP, WebM, PDFs, page images, and merged PDFs locally.",
+    "Convert images, videos, PDFs, and presentations directly in your browser without uploading files. Create WebP, WebM, PDFs, page images, merged PDFs, and presentation PDFs locally.",
 };
 
 export default function RootLayout({

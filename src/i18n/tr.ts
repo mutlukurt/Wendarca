@@ -6,14 +6,18 @@ export const tr = {
     privacy: "Gizlilik",
     faq: "SSS",
     github: "Proje bağlantısı",
+    menu: "Menüyü aç",
+    closeMenu: "Menüyü kapat",
+    cta: "Dönüştürmeye başla",
   },
   hero: {
     eyebrow: "Tarayıcıda gizli dönüştürme",
-    title: "Görsel, PDF ve videoları yüklemeden dönüştür.",
+    title: "Dosyalarını yerelde dönüştür. Gizli kalsın.",
     subtitle:
-      "WebP, WebM, PDF, sayfa görselleri ve birleştirilmiş belgeleri doğrudan tarayıcında oluştur.",
+      "WebP, WebM, PDF, sayfa görselleri ve sunum PDF’lerini doğrudan tarayıcında oluştur — yükleme yok, hesap yok, sunucu depolaması yok.",
     primary: "Dönüştürmeye başla",
     secondary: "Gizlilik notları",
+    trust: ["Yükleme yok", "Hesap yok", "Tarayıcıda çalışır", "Toplu indirme"],
   },
   illustration: {
     images: "Görseller",
@@ -22,20 +26,25 @@ export const tr = {
     output: "Optimize çıktı",
     compress: "Daha küçük",
     ready: "hazır",
+    local: "yerel",
+    input: "Girdi dosyaları",
   },
   converter: {
     title: "Dönüştürücü",
     subtitle: "Dosyalarını bırak, kaliteyi seç ve cihazında yerel olarak dönüştür.",
+    workspaceLabel: "Yerel dönüştürme çalışma alanı",
     tabs: {
       images: "Görseller",
       videos: "Videoları WebM’ye",
       pdfs: "PDF araçları",
+      presentations: "PPTX’ten PDF’e",
       all: "Tüm dosyalar",
     },
     supported: "Desteklenen formatlar",
     imageFormats: "Görseller: PNG, JPG, JPEG",
     videoFormats: "Videolar: MP4, MOV, AVI, MKV, M4V",
     pdfFormats: "PDF: PNG/JPEG’den PDF, PDF’den PNG/JPEG, PDF birleştirme",
+    presentationFormats: "Sunumlar: PPTX’ten PDF’e",
     dropTitle: "Görsel, video veya PDF dosyalarını buraya bırak",
     dropActive: "Eklemek için bırak",
     dropSubtitle: "veya cihazından seçmek için tıkla",
@@ -55,8 +64,13 @@ export const tr = {
         active: "PDF veya görselleri eklemek için bırak",
         subtitle: "PDF birleştir, PDF sayfalarını görsele çevir veya PNG/JPEG’den PDF oluştur.",
       },
+      presentations: {
+        title: "PDF’e çevirmek için PPTX dosyalarını bırak",
+        active: "PPTX dosyalarını eklemek için bırak",
+        subtitle: "Sunumları ayrı PDF’lere veya tek sıkıştırılmış PDF’e çevir.",
+      },
       all: {
-        title: "Görsel, video veya PDF dosyalarını buraya bırak",
+        title: "Görsel, video, PDF veya PPTX dosyalarını buraya bırak",
         active: "Dosyaları eklemek için bırak",
         subtitle: "Araç bazlı ayarlar için ilgili sekmeyi kullan.",
       },
@@ -66,7 +80,7 @@ export const tr = {
     duplicate: "Dosya zaten eklendi:",
     queueTitle: "Dosya kuyruğu",
     emptyQueue: "Seçtiğin dosyalar burada görünecek.",
-    allModeNote: "Tüm dosyalar modu kontrolleri sade tutar. Detaylı WebP, WebM veya PDF ayarları için ilgili sekmeyi kullan.",
+    allModeNote: "Tüm dosyalar modu kontrolleri sade tutar. Detaylı WebP, WebM, PDF veya PPTX ayarları için ilgili sekmeyi kullan.",
     largeVideoNote: "Büyük videolar cihazına bağlı olarak daha uzun sürebilir.",
     convertAll: "Tümünü dönüştür",
     clearAll: "Tümünü temizle",
@@ -84,6 +98,7 @@ export const tr = {
     imageError: "Bu görsel dönüştürülemedi. Başka bir PNG veya JPG dosyası dene.",
     videoError: "Bu video dönüştürülemedi. Büyük veya sıra dışı dosyalar tarayıcı sınırlarını aşabilir.",
     pdfError: "Bu PDF işlemi tamamlanamadı. Şifreli veya çok büyük PDF’ler tarayıcı sınırlarını aşabilir.",
+    presentationError: "Bu PPTX dosyası dönüştürülemedi. Karmaşık animasyonlar, grafikler veya desteklenmeyen slayt nesneleri tarayıcıda doğru render edilmeyebilir.",
     batchError: "Bu toplu işlem tamamlanamadı.",
     status: {
       waiting: "Bekliyor",
@@ -111,11 +126,18 @@ export const tr = {
     targetImageSize: "Hedef görsel boyutu",
     targetImageSizeHint: "İsteğe bağlı. Gerekirse önce kalite, sonra boyut küçültülür.",
     pdfAction: "PDF işlemi",
-    pdfImageQuality: "PDF çıktı kalitesi",
+    pdfImageQuality: "PDF sıkıştırma kalitesi",
     pdfActions: {
       "to-png": "PDF’den PNG",
       "to-jpeg": "PDF’den JPEG",
       merge: "PDF birleştir",
+    },
+    presentationAction: "PPTX çıktısı",
+    presentationQuality: "PPTX PDF sıkıştırma kalitesi",
+    presentationHint: "PPTX dönüşümü yüksek doğruluklu PDF çıktısı için yerel LibreOffice WebAssembly motorunu kullanır. İlk kullanımda motor yüklenirken biraz daha uzun sürebilir.",
+    presentationActions: {
+      separate: "Ayrı PDF’ler",
+      merged: "Tek birleşik PDF",
     },
     videoQuality: "Video kalitesi",
     maxWidth: "Maksimum genişlik",
@@ -127,7 +149,7 @@ export const tr = {
   privacy: {
     title: "Gizlilik öncelikli tasarım",
     subtitle:
-      "Dosyaların cihazında kalır. Wendarca görsellerini, PDF’lerini veya videolarını bir sunucuya yüklemez.",
+      "Dosyaların cihazında kalır. Wendarca dönüştürmeleri canvas, WebAssembly ve yerel dosya API’leri gibi istemci tarafı teknolojilerle tarayıcında işler.",
     local: {
       title: "Yerel işleme",
       text: "Dönüştürme işlemi canvas ve WebAssembly kullanılarak tarayıcında çalışır.",
@@ -140,12 +162,16 @@ export const tr = {
       title: "Toplu iş akışına uygun",
       text: "Birden fazla dosyayı dönüştürüp çıktıları tek tek veya ZIP olarak indir.",
     },
+    storage: {
+      title: "Bulut depolama yok",
+      text: "Wendarca dosyalarını, çıktıları veya dönüştürme geçmişini saklamaz.",
+    },
   },
   how: {
     title: "Nasıl çalışır",
     steps: [
-      { title: "Dosyalarını bırak", text: "Desteklenen görsel, PDF ve videoları tek tek ya da toplu halde ekle." },
-      { title: "Çıktıyı seç", text: "WebP, WebM, PDF oluşturma, sayfa görseli veya PDF birleştirme seç." },
+      { title: "Dosyalarını bırak", text: "Desteklenen görsel, PDF, sunum ve videoları tek tek ya da toplu halde ekle." },
+      { title: "Çıktıyı seç", text: "WebP, WebM, PDF oluşturma, PPTX dönüştürme, sayfa görseli veya PDF birleştirme seç." },
       { title: "Dönüştür ve indir", text: "Sonuçları tek tek, birleştirilmiş belge olarak veya ZIP içinde indir." },
     ],
   },
@@ -164,16 +190,41 @@ export const tr = {
       {
         question: "Hangi formatlar destekleniyor?",
         answer:
-          "PNG/JPG/JPEG dosyaları WebP veya PDF’e, PDF dosyaları PNG/JPEG’e dönüştürülür; PDF birleştirme ve MP4/MOV/MKV/AVI/M4V’den WebM’e dönüşüm desteklenir.",
+          "PNG/JPG/JPEG dosyaları WebP veya PDF’e, PDF dosyaları PNG/JPEG’e, PPTX dosyaları PDF’e dönüştürülür; PDF birleştirme ve MP4/MOV/MKV/AVI/M4V’den WebM’e dönüşüm desteklenir.",
+      },
+      {
+        question: "Wendarca dosyalarımı saklıyor mu?",
+        answer: "Hayır. Wendarca’da hesap sistemi, veritabanı veya sunucu taraflı dosya depolaması yoktur.",
       },
     ],
   },
+  formats: {
+    eyebrow: "Yetenekler",
+    title: "Günlük dönüştürme işleri için tek çalışma alanı.",
+    subtitle: "Her araç kendi akışına odaklanır; toplu indirme büyük işleri düzenli tutar.",
+    items: [
+      { title: "Görseller", text: "PNG, JPG ve JPEG dosyalarını optimize WebP’ye çevir.", meta: "PNG · JPG · JPEG -> WebP" },
+      { title: "Videolar", text: "Yaygın video formatlarını web uyumlu WebM’e dönüştür.", meta: "MP4 · MOV · AVI · MKV · M4V -> WebM" },
+      { title: "PDF’ler", text: "PDF oluştur, sayfaları görsele çevir ve sıkıştırmalı birleştir.", meta: "PDF · PNG · JPEG" },
+      { title: "Sunumlar", text: "PPTX dosyalarını yerel LibreOffice WebAssembly motoruyla PDF’e çevir.", meta: "PPTX -> PDF" },
+      { title: "Toplu indirme", text: "Tekil dosyaları, birleştirilmiş çıktıları veya ZIP arşivlerini indir.", meta: "PDF · WebP · WebM · ZIP" },
+    ],
+  },
+  openSource: {
+    eyebrow: "Açık kaynak dostu",
+    title: "Hızlı ve gizli dosya iş akışları için geliştirildi.",
+    text: "Wendarca şeffaf ve yerel öncelikli bir araç olarak tasarlandı: hesap yok, yükleme hattı yok, veritabanı yok. Arayüz dosyalarını hızlı ve gizli hazırlamana odaklanır.",
+    primary: "GitHub’da görüntüle",
+    secondary: "Gizlilik notları",
+  },
   footer: {
     privacy: "Gizli yerel dönüştürme. Yükleme yok, hesap yok, veritabanı yok.",
+    built: "Hızlı ve gizli dosya iş akışları için geliştirildi.",
     links: {
       converter: "Dönüştürücü",
       privacy: "Gizlilik",
       faq: "SSS",
+      github: "GitHub",
     },
   },
 };
