@@ -15,6 +15,7 @@
     "@ffmpeg/util": "^0.12.2",
     "@matbee/libreoffice-converter": "^2.6.0",
     "clsx": "^2.1.1",
+    "heic2any": "^0.0.4",
     "jszip": "^3.10.1",
     "lucide-react": "^0.468.0",
     "next": "^16.0.0",
@@ -22,7 +23,8 @@
     "pdfjs-dist": "^5.6.205",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "simple-icons": "^14.0.0"
+    "simple-icons": "^14.0.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.0",

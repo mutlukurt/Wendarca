@@ -1,12 +1,25 @@
 export type Language = "en" | "tr";
 
-export type FileKind = "image" | "video" | "pdf" | "presentation";
+export type FileKind = "image" | "video" | "pdf" | "presentation" | "heic" | "word" | "excel";
 
 export type ConversionStatus = "waiting" | "converting" | "done" | "failed";
 
-export type ConverterTab = "images" | "videos" | "pdfs" | "presentations" | "all";
+export type ConverterTab =
+  | "images"
+  | "videos"
+  | "pdfs"
+  | "presentations"
+  | "imageFormats"
+  | "heic"
+  | "office"
+  | "wordPdf"
+  | "excelPdf"
+  | "all";
 
-export type ImageOutputFormat = "webp" | "pdf";
+export type ImageOutputFormat = "webp" | "pdf" | "png" | "jpeg";
+export type RasterOutputFormat = "png" | "jpeg";
+export type HeicOutputFormat = "png" | "jpeg";
+export type OfficeAction = "word-to-excel" | "excel-to-word" | "word-to-pdf" | "excel-to-pdf";
 
 export type PdfAction = "to-png" | "to-jpeg" | "merge";
 
@@ -30,7 +43,7 @@ export interface ConversionFile {
   originalName: string;
   originalType: string;
   originalSize: number;
-  targetFormat: "webp" | "webm" | "pdf" | "png" | "jpeg" | "zip";
+  targetFormat: "webp" | "webm" | "pdf" | "png" | "jpeg" | "zip" | "xlsx" | "docx";
   status: ConversionStatus;
   progress: number;
   converted?: ConvertedAsset;

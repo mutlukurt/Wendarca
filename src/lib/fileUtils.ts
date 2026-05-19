@@ -1,8 +1,11 @@
 import {
+  SUPPORTED_EXCEL_EXTENSIONS,
+  SUPPORTED_HEIC_EXTENSIONS,
   SUPPORTED_IMAGE_EXTENSIONS,
   SUPPORTED_PDF_EXTENSIONS,
   SUPPORTED_PRESENTATION_EXTENSIONS,
   SUPPORTED_VIDEO_EXTENSIONS,
+  SUPPORTED_WORD_EXTENSIONS,
 } from "@/lib/constants";
 
 export function formatBytes(bytes: number): string {
@@ -23,6 +26,11 @@ export function isImageFile(file: File): boolean {
   return SUPPORTED_IMAGE_EXTENSIONS.includes(extension as (typeof SUPPORTED_IMAGE_EXTENSIONS)[number]);
 }
 
+export function isHeicFile(file: File): boolean {
+  const extension = getFileExtension(file.name);
+  return SUPPORTED_HEIC_EXTENSIONS.includes(extension as (typeof SUPPORTED_HEIC_EXTENSIONS)[number]);
+}
+
 export function isVideoFile(file: File): boolean {
   const extension = getFileExtension(file.name);
   return SUPPORTED_VIDEO_EXTENSIONS.includes(extension as (typeof SUPPORTED_VIDEO_EXTENSIONS)[number]);
@@ -38,6 +46,23 @@ export function isPresentationFile(file: File): boolean {
   return (
     file.type === "application/vnd.openxmlformats-officedocument.presentationml.presentation" ||
     SUPPORTED_PRESENTATION_EXTENSIONS.includes(extension as (typeof SUPPORTED_PRESENTATION_EXTENSIONS)[number])
+  );
+}
+
+export function isWordFile(file: File): boolean {
+  const extension = getFileExtension(file.name);
+  return (
+    file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    SUPPORTED_WORD_EXTENSIONS.includes(extension as (typeof SUPPORTED_WORD_EXTENSIONS)[number])
+  );
+}
+
+export function isExcelFile(file: File): boolean {
+  const extension = getFileExtension(file.name);
+  return (
+    file.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+    file.type === "application/vnd.ms-excel" ||
+    SUPPORTED_EXCEL_EXTENSIONS.includes(extension as (typeof SUPPORTED_EXCEL_EXTENSIONS)[number])
   );
 }
 

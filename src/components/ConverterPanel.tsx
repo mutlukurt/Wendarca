@@ -3,7 +3,8 @@
 import { Archive, Download, Info, Loader2, RotateCcw, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Dictionary } from "@/i18n";
-import { convertImageToWebP } from "@/lib/imageConverter";
+import { convertHeicImage, convertImageToWebP, convertRasterImage } from "@/lib/imageConverter";
+import { convertExcelToPdf, convertExcelToWord, convertWordToExcel, convertWordToPdf } from "@/lib/officeConverter";
 import { convertImagesToPdf, convertPdfToImageZip, mergePdfsCompressed } from "@/lib/pdfConverter";
 import { convertPptxFilesToMergedPdf, convertPptxToPdf } from "@/lib/pptxConverter";
 import { createZipFromConvertedFiles } from "@/lib/zipUtils";
@@ -11,9 +12,12 @@ import {
   createConversionId,
   getFileExtension,
   isImageFile,
+  isExcelFile,
+  isHeicFile,
   isPdfFile,
   isPresentationFile,
   isVideoFile,
+  isWordFile,
   replaceExtension,
 } from "@/lib/fileUtils";
 import type {
@@ -21,14 +25,27 @@ import type {
   ConversionFile,
   ConverterTab,
   ImageOutputFormat,
+  HeicOutputFormat,
   MaxVideoWidth,
+  OfficeAction,
   PdfAction,
   PresentationAction,
+  RasterOutputFormat,
   VideoQuality,
 } from "@/types/conversion";
 import { Dropzone } from "@/components/Dropzone";
 import { FileQueue } from "@/components/FileQueue";
-import { ImageControls, PdfControls, PresentationControls, VideoControls } from "@/components/QualityControls";
+import {
+  AllFilesControls,
+  HeicControls,
+  ImageControls,
+  ImageFormatControls,
+  OfficeControls,
+  OfficePdfControls,
+  PdfControls,
+  PresentationControls,
+  VideoControls,
+} from "@/components/QualityControls";
 
 interface ConverterPanelProps {
   dictionary: Dictionary;
@@ -40,6 +57,9 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
   const [imageOutput, setImageOutput] = useState<ImageOutputFormat>("webp");
   const [imageQuality, setImageQuality] = useState(0.82);
   const [targetImageSizeKb, setTargetImageSizeKb] = useState<number | null>(null);
+  const [rasterOutput, setRasterOutput] = useState<RasterOutputFormat>("png");
+  const [heicOutput, setHeicOutput] = useState<HeicOutputFormat>("png");
+  const [officeAction, setOfficeAction] = useState<OfficeAction>("word-to-excel");
   const [pdfAction, setPdfAction] = useState<PdfAction>("merge");
   const [pdfImageQuality, setPdfImageQuality] = useState(0.62);
   const [presentationAction, setPresentationAction] = useState<PresentationAction>("separate");
@@ -80,15 +100,44 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
             ? files.filter((file) => file.kind === "pdf" || file.kind === "image")
             : activeTab === "presentations"
               ? files.filter((file) => file.kind === "presentation")
-            : files;
+              : activeTab === "imageFormats"
+                ? files.filter((file) => file.kind === "image")
+                : activeTab === "heic"
+                  ? files.filter((file) => file.kind === "heic")
+                  : activeTab === "office"
+                    ? files.filter((file) => file.kind === "word" || file.kind === "excel")
+                    : activeTab === "wordPdf"
+                      ? files.filter((file) => file.kind === "word")
+                      : activeTab === "excelPdf"
+                        ? files.filter((file) => file.kind === "excel")
+                    : files;
 
     return scopedFiles.map((file) => ({
       ...file,
-      targetFormat: targetFormatForKind(file.kind, activeTab === "images" ? "webp" : imageOutput, pdfAction),
+      targetFormat: targetFormatForKind(file.kind, {
+        activeTab,
+        imageOutput: activeTab === "images" ? "webp" : imageOutput,
+        pdfAction,
+        rasterOutput,
+        heicOutput,
+        officeAction,
+      }),
     }));
-  }, [activeTab, files, imageOutput, pdfAction]);
+  }, [activeTab, files, heicOutput, imageOutput, officeAction, pdfAction, rasterOutput]);
 
   const activeFiles = useMemo(() => files.filter((file) => isFileRelevantForTab(file, activeTab)), [activeTab, files]);
+
+  const getTargetOptions = useCallback(
+    () => ({
+      activeTab,
+      imageOutput: activeTab === "images" ? ("webp" as const) : imageOutput,
+      pdfAction,
+      rasterOutput,
+      heicOutput,
+      officeAction,
+    }),
+    [activeTab, heicOutput, imageOutput, officeAction, pdfAction, rasterOutput],
+  );
 
   const addFiles = useCallback(
     (incoming: File[]) => {
@@ -106,26 +155,44 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
             return;
           }
 
-          if (isImageFile(file) && (activeTab === "images" || activeTab === "pdfs" || activeTab === "all")) {
-            accepted.push(createQueueItem(file, "image", imageOutput, pdfAction));
+          if (isImageFile(file) && (activeTab === "images" || activeTab === "pdfs" || activeTab === "imageFormats" || activeTab === "all")) {
+            accepted.push(createQueueItem(file, "image", getTargetOptions()));
             known.add(key);
             return;
           }
 
           if (isVideoFile(file) && (activeTab === "videos" || activeTab === "all")) {
-            accepted.push(createQueueItem(file, "video", imageOutput, pdfAction));
+            accepted.push(createQueueItem(file, "video", getTargetOptions()));
             known.add(key);
             return;
           }
 
           if (isPdfFile(file) && (activeTab === "pdfs" || activeTab === "all")) {
-            accepted.push(createQueueItem(file, "pdf", imageOutput, pdfAction));
+            accepted.push(createQueueItem(file, "pdf", getTargetOptions()));
             known.add(key);
             return;
           }
 
           if (isPresentationFile(file) && (activeTab === "presentations" || activeTab === "all")) {
-            accepted.push(createQueueItem(file, "presentation", imageOutput, pdfAction));
+            accepted.push(createQueueItem(file, "presentation", getTargetOptions()));
+            known.add(key);
+            return;
+          }
+
+          if (isHeicFile(file) && (activeTab === "heic" || activeTab === "all")) {
+            accepted.push(createQueueItem(file, "heic", getTargetOptions()));
+            known.add(key);
+            return;
+          }
+
+          if (isWordFile(file) && ((activeTab === "office" && (officeAction === "word-to-excel" || officeAction === "word-to-pdf")) || activeTab === "wordPdf" || activeTab === "all")) {
+            accepted.push(createQueueItem(file, "word", getTargetOptions()));
+            known.add(key);
+            return;
+          }
+
+          if (isExcelFile(file) && ((activeTab === "office" && (officeAction === "excel-to-word" || officeAction === "excel-to-pdf")) || activeTab === "excelPdf" || activeTab === "all")) {
+            accepted.push(createQueueItem(file, "excel", getTargetOptions()));
             known.add(key);
             return;
           }
@@ -137,7 +204,7 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
         return [...current, ...accepted];
       });
     },
-    [activeTab, dictionary, imageOutput, pdfAction],
+    [activeTab, dictionary, getTargetOptions, officeAction],
   );
 
   const removeFile = (id: string) => {
@@ -185,13 +252,13 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
         imageFiles.forEach((file) => batchedIds.add(file.id));
       }
 
-      if (activeTab === "presentations" && presentationAction === "merged" && presentationFiles.length > 0) {
+      if ((activeTab === "presentations" || activeTab === "all") && presentationAction === "merged" && presentationFiles.length > 0) {
         await convertPresentationMerge(presentationFiles);
         presentationFiles.forEach((file) => batchedIds.add(file.id));
       }
 
       for (const item of candidates.filter((file) => !batchedIds.has(file.id))) {
-        const targetFormat = targetFormatForKind(item.kind, activeTab === "images" ? "webp" : imageOutput, pdfAction);
+        const targetFormat = targetFormatForKind(item.kind, getTargetOptions());
         updateFile(item.id, (file) => ({ ...file, targetFormat, status: "converting", progress: 4, error: undefined }));
 
         try {
@@ -223,13 +290,15 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
             status: "failed",
             progress: 100,
             error:
-              file.kind === "image"
+              file.kind === "image" || file.kind === "heic"
                 ? dictionary.converter.imageError
                 : file.kind === "pdf"
                   ? dictionary.converter.pdfError
                   : file.kind === "presentation"
                     ? dictionary.converter.presentationError
-                    : dictionary.converter.videoError,
+                    : file.kind === "word" || file.kind === "excel"
+                      ? dictionary.converter.officeError
+                      : dictionary.converter.videoError,
           }));
         }
       }
@@ -245,7 +314,19 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
         throw new Error("Image to PDF is handled as a batch task.");
       }
 
+      if (activeTab === "imageFormats") {
+        return convertRasterImage(item.file, rasterOutput, imageQuality);
+      }
+
+      if (activeTab === "all" && (imageOutput === "png" || imageOutput === "jpeg")) {
+        return convertRasterImage(item.file, imageOutput, imageQuality);
+      }
+
       return convertImageToWebP(item.file, { quality: imageQuality, targetSizeKb: targetImageSizeKb });
+    }
+
+    if (item.kind === "heic") {
+      return convertHeicImage(item.file, heicOutput, imageQuality);
     }
 
     if (item.kind === "pdf") {
@@ -258,6 +339,26 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
       return convertPptxToPdf(item.file, presentationQuality, (progress) => {
         updateFile(item.id, (file) => ({ ...file, progress }));
       });
+    }
+
+    if (item.kind === "word") {
+      if (targetFormatForKind(item.kind, getTargetOptions()) === "pdf") {
+        return convertWordToPdf(item.file, pdfImageQuality, (progress) => {
+          updateFile(item.id, (file) => ({ ...file, progress }));
+        });
+      }
+
+      return convertWordToExcel(item.file);
+    }
+
+    if (item.kind === "excel") {
+      if (targetFormatForKind(item.kind, getTargetOptions()) === "pdf") {
+        return convertExcelToPdf(item.file, pdfImageQuality, (progress) => {
+          updateFile(item.id, (file) => ({ ...file, progress }));
+        });
+      }
+
+      return convertExcelToWord(item.file);
     }
 
     return convertVideo(item);
@@ -348,6 +449,11 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
     { id: "videos", label: dictionary.converter.tabs.videos },
     { id: "pdfs", label: dictionary.converter.tabs.pdfs },
     { id: "presentations", label: dictionary.converter.tabs.presentations },
+    { id: "imageFormats", label: dictionary.converter.tabs.imageFormats },
+    { id: "heic", label: dictionary.converter.tabs.heic },
+    { id: "office", label: dictionary.converter.tabs.office },
+    { id: "wordPdf", label: dictionary.converter.tabs.wordPdf },
+    { id: "excelPdf", label: dictionary.converter.tabs.excelPdf },
     { id: "all", label: dictionary.converter.tabs.all },
   ];
 
@@ -360,15 +466,18 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
         </div>
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-[#000000] md:text-4xl">{dictionary.converter.title}</h2>
+            <h2 className="text-3xl font-semibold text-[#000000] md:text-4xl">{dictionary.converter.title}</h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-[#797979] md:text-base">{dictionary.converter.subtitle}</p>
           </div>
-          <div className="grid gap-2 rounded-3xl border border-[#D8D8D8] bg-[#F2F2F2]/80 p-4 text-sm text-[#797979] shadow-sm sm:grid-cols-2 lg:w-[34rem]">
+          <div className="grid gap-2 rounded-3xl border border-[#D8D8D8] bg-[#F2F2F2]/80 p-4 text-sm text-[#797979] shadow-sm sm:grid-cols-2 lg:w-[38rem]">
             <p className="font-semibold text-[#000000] sm:col-span-2">{dictionary.converter.supported}</p>
             <p className="rounded-2xl bg-white/70 px-3 py-2">{dictionary.converter.imageFormats}</p>
             <p className="rounded-2xl bg-white/70 px-3 py-2">{dictionary.converter.videoFormats}</p>
             <p className="rounded-2xl bg-white/70 px-3 py-2">{dictionary.converter.pdfFormats}</p>
             <p className="rounded-2xl bg-white/70 px-3 py-2">{dictionary.converter.presentationFormats}</p>
+            <p className="rounded-2xl bg-white/70 px-3 py-2">{dictionary.converter.rasterFormats}</p>
+            <p className="rounded-2xl bg-white/70 px-3 py-2">{dictionary.converter.heicFormats}</p>
+            <p className="rounded-2xl bg-white/70 px-3 py-2 sm:col-span-2">{dictionary.converter.officeFormats}</p>
           </div>
         </div>
 
@@ -424,7 +533,7 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
             {activeTab === "pdfs" ? (
               <PdfControls
                 dictionary={dictionary}
-                imageOutput={imageOutput}
+                imageOutput={imageOutput === "pdf" ? "pdf" : "webp"}
                 onImageOutputChange={setImageOutput}
                 pdfAction={pdfAction}
                 onPdfActionChange={setPdfAction}
@@ -443,10 +552,57 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
                 disabled={isConverting}
               />
             ) : null}
+            {activeTab === "imageFormats" ? (
+              <ImageFormatControls
+                dictionary={dictionary}
+                rasterOutput={rasterOutput}
+                onRasterOutputChange={setRasterOutput}
+                disabled={isConverting}
+              />
+            ) : null}
+            {activeTab === "heic" ? (
+              <HeicControls
+                dictionary={dictionary}
+                heicOutput={heicOutput}
+                onHeicOutputChange={setHeicOutput}
+                disabled={isConverting}
+              />
+            ) : null}
+            {activeTab === "office" ? (
+              <OfficeControls
+                dictionary={dictionary}
+                officeAction={officeAction}
+                onOfficeActionChange={setOfficeAction}
+                disabled={isConverting}
+              />
+            ) : null}
+            {activeTab === "wordPdf" ? (
+              <OfficePdfControls title={dictionary.controls.wordPdfAction} description={dictionary.controls.wordPdfHint} />
+            ) : null}
+            {activeTab === "excelPdf" ? (
+              <OfficePdfControls title={dictionary.controls.excelPdfAction} description={dictionary.controls.excelPdfHint} />
+            ) : null}
             {activeTab === "all" ? (
-              <div className="rounded-3xl border border-[#D8D8D8] bg-[#FFFFFF]/90 p-5 text-sm leading-6 text-[#797979] shadow-sm">
-                {dictionary.converter.allModeNote}
-              </div>
+              <AllFilesControls
+                dictionary={dictionary}
+                imageOutput={imageOutput}
+                onImageOutputChange={setImageOutput}
+                pdfAction={pdfAction}
+                onPdfActionChange={setPdfAction}
+                presentationAction={presentationAction}
+                onPresentationActionChange={setPresentationAction}
+                rasterOutput={rasterOutput}
+                onRasterOutputChange={setRasterOutput}
+                heicOutput={heicOutput}
+                onHeicOutputChange={setHeicOutput}
+                officeAction={officeAction}
+                onOfficeActionChange={setOfficeAction}
+                videoQuality={videoQuality}
+                onVideoQualityChange={setVideoQuality}
+                maxWidth={maxWidth}
+                onMaxWidthChange={setMaxWidth}
+                disabled={isConverting}
+              />
             ) : null}
           </div>
 
@@ -511,7 +667,16 @@ export function ConverterPanel({ dictionary }: ConverterPanelProps) {
   );
 }
 
-function createQueueItem(file: File, kind: "image" | "video" | "pdf" | "presentation", imageOutput: ImageOutputFormat, pdfAction: PdfAction): ConversionFile {
+type TargetOptions = {
+  activeTab: ConverterTab;
+  imageOutput: ImageOutputFormat;
+  pdfAction: PdfAction;
+  rasterOutput: RasterOutputFormat;
+  heicOutput: HeicOutputFormat;
+  officeAction: OfficeAction;
+};
+
+function createQueueItem(file: File, kind: ConversionFile["kind"], options: TargetOptions): ConversionFile {
   return {
     id: createConversionId(),
     file,
@@ -519,17 +684,24 @@ function createQueueItem(file: File, kind: "image" | "video" | "pdf" | "presenta
     originalName: file.name,
     originalType: getFileExtension(file.name) || file.type || "file",
     originalSize: file.size,
-    targetFormat: targetFormatForKind(kind, imageOutput, pdfAction),
+    targetFormat: targetFormatForKind(kind, options),
     status: "waiting",
     progress: 0,
   };
 }
 
-function targetFormatForKind(kind: "image" | "video" | "pdf" | "presentation", imageOutput: ImageOutputFormat, pdfAction: PdfAction): ConversionFile["targetFormat"] {
-  if (kind === "image") return imageOutput;
+function targetFormatForKind(kind: ConversionFile["kind"], options: TargetOptions): ConversionFile["targetFormat"] {
+  if (kind === "image") {
+    if (options.activeTab === "imageFormats") return options.rasterOutput;
+    if (options.activeTab === "pdfs") return options.imageOutput === "pdf" ? "pdf" : "webp";
+    return options.imageOutput;
+  }
   if (kind === "video") return "webm";
   if (kind === "presentation") return "pdf";
-  if (pdfAction === "merge") return "pdf";
+  if (kind === "heic") return options.heicOutput;
+  if (kind === "word") return options.activeTab === "wordPdf" || options.officeAction === "word-to-pdf" ? "pdf" : "xlsx";
+  if (kind === "excel") return options.activeTab === "excelPdf" || options.officeAction === "excel-to-pdf" ? "pdf" : "docx";
+  if (options.pdfAction === "merge") return "pdf";
   return "zip";
 }
 
@@ -538,6 +710,11 @@ function isFileRelevantForTab(file: ConversionFile, tab: ConverterTab): boolean 
   if (tab === "videos") return file.kind === "video";
   if (tab === "pdfs") return file.kind === "pdf" || file.kind === "image";
   if (tab === "presentations") return file.kind === "presentation";
+  if (tab === "imageFormats") return file.kind === "image";
+  if (tab === "heic") return file.kind === "heic";
+  if (tab === "office") return file.kind === "word" || file.kind === "excel";
+  if (tab === "wordPdf") return file.kind === "word";
+  if (tab === "excelPdf") return file.kind === "excel";
   return true;
 }
 
@@ -547,7 +724,12 @@ function dropzoneCopyForTab(dictionary: Dictionary, tab: ConverterTab) {
     videos: ".mp4,.mov,.avi,.mkv,.m4v,video/*",
     pdfs: ".png,.jpg,.jpeg,.pdf,image/png,image/jpeg,application/pdf",
     presentations: ".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    all: ".png,.jpg,.jpeg,.pdf,.pptx,.mp4,.mov,.avi,.mkv,.m4v,image/png,image/jpeg,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,video/*",
+    imageFormats: ".png,.jpg,.jpeg,image/png,image/jpeg",
+    heic: ".heic,.heif,image/heic,image/heif",
+    office: ".docx,.xlsx,.xls,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel",
+    wordPdf: ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    excelPdf: ".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel",
+    all: ".png,.jpg,.jpeg,.heic,.heif,.pdf,.pptx,.docx,.xlsx,.xls,.mp4,.mov,.avi,.mkv,.m4v,image/png,image/jpeg,image/heic,image/heif,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,video/*",
   } satisfies Record<ConverterTab, string>;
 
   return {

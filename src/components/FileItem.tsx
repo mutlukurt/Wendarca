@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Download, FileImage, FileText, FileVideo, Trash2, XCircle } from "lucide-react";
+import { CheckCircle2, Download, FileImage, FileSpreadsheet, FileText, FileVideo, Trash2, XCircle } from "lucide-react";
 import type { Dictionary } from "@/i18n";
 import { calculateCompression, formatBytes } from "@/lib/fileUtils";
 import type { ConversionFile } from "@/types/conversion";
@@ -21,7 +21,15 @@ export function FileItem({ item, dictionary, onRemove }: FileItemProps) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#D8D8D8] bg-[#F2F2F2] text-[#FB4D27]">
-            {item.kind === "image" ? <FileImage className="h-5 w-5" /> : item.kind === "video" ? <FileVideo className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
+            {item.kind === "image" || item.kind === "heic" ? (
+              <FileImage className="h-5 w-5" />
+            ) : item.kind === "video" ? (
+              <FileVideo className="h-5 w-5" />
+            ) : item.kind === "excel" ? (
+              <FileSpreadsheet className="h-5 w-5" />
+            ) : (
+              <FileText className="h-5 w-5" />
+            )}
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-[#000000]">{item.originalName}</p>

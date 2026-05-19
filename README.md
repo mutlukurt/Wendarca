@@ -65,17 +65,34 @@ This release redesigned the full product interface while preserving the existing
 - Refined the mobile hamburger menu, outside-tap closing behavior, language switcher readability, and responsive layout
 - Updated the visual system around black, flame orange, medium gray, and light gray brand colors
 
+### v1.4.0 - Expanded File Tools
+
+This release added more everyday file workflows while keeping Wendarca focused on the browser-based local converter experience.
+
+- Added JPG/PNG format conversion
+- Added HEIC/HEIF to PNG/JPEG conversion
+- Added Word/Excel structured data conversion workflows
+- Added dedicated Word to PDF and Excel to PDF sections powered by the local LibreOffice WebAssembly engine
+- Added clearer UI copy explaining that Word/Excel conversion focuses on structured text and table data
+
 ## What Wendarca Does
 
 Wendarca helps users convert common file types directly on their own device:
 
 - Convert `PNG`, `JPG`, and `JPEG` images to `WebP`
+- Convert `JPG` to `PNG`
+- Convert `PNG` and `JPG` to `JPEG`
+- Convert `HEIC` and `HEIF` photos to `PNG` or `JPEG`
 - Compress images with quality control and optional target file size
 - Convert common video files such as `MP4`, `MOV`, `AVI`, `MKV`, and `M4V` to `WebM`
 - Convert `PNG` and `JPEG` images into PDF documents
 - Convert PDF pages to `PNG` or `JPEG`
 - Merge multiple PDFs into one PDF
 - Convert `PPTX` presentations to individual PDFs or one merged PDF
+- Convert `DOCX` files to PDF
+- Convert `XLS` and `XLSX` files to PDF
+- Convert structured Word table/text content to `XLSX`
+- Convert spreadsheet rows to `DOCX`
 - Download converted files individually
 - Download multiple outputs as a ZIP archive
 - Use the app in English or Turkish
@@ -146,6 +163,15 @@ Wendarca keeps conversion local whenever the browser can handle it. This provide
 - Supports ZIP download for separately converted presentation PDFs
 - Keeps conversion local in the browser after the WASM engine loads
 
+### Office Conversion
+
+- Converts `DOCX` to PDF through the local LibreOffice WebAssembly engine
+- Converts `XLS` and `XLSX` to PDF through the local LibreOffice WebAssembly engine
+- Converts structured Word tables and text into `XLSX`
+- Converts spreadsheet rows and sheets into `DOCX`
+- Clearly communicates that Word/Excel conversion focuses on structured text and table data, not guaranteed one-to-one layout preservation
+- Keeps Office conversion local in the browser after the LibreOffice WASM engine loads
+
 ### Batch Workflow
 
 - Drag and drop multiple files
@@ -180,6 +206,7 @@ Files are processed in the browser using:
 - Canvas APIs for image conversion
 - WebAssembly ffmpeg for video conversion
 - PDF rendering and generation libraries for PDF workflows
+- LibreOffice WebAssembly for PPTX, Word-to-PDF, Excel-to-PDF, and Office conversion assistance
 - Blob URLs for local downloads
 - JSZip for local ZIP generation
 
@@ -207,6 +234,8 @@ No database, authentication, external upload API, or server-side file storage is
 - **@ffmpeg/core**: local WebAssembly ffmpeg core
 - **@ffmpeg/util**: file loading helpers for ffmpeg.wasm
 - **@matbee/libreoffice-converter**: LibreOffice WebAssembly engine for high-fidelity PPTX-to-PDF conversion
+- **heic2any**: browser-side HEIC/HEIF image decoding and conversion
+- **xlsx**: spreadsheet generation and workbook handling
 - **pdf-lib**: PDF creation and PDF merging
 - **pdfjs-dist**: PDF page rendering for PDF-to-image conversion
 - **jszip**: ZIP generation for batch downloads

@@ -29,7 +29,7 @@ export function HowItWorks({ dictionary }: HowItWorksProps) {
                   {String(index + 1).padStart(2, "0")}
                 </span>
               </div>
-              <h3 className="mt-6 text-xl font-semibold tracking-tight text-[#000000]">{step.title}</h3>
+              <h3 className="mt-6 text-xl font-semibold text-[#000000]">{step.title}</h3>
               <p className="mt-3 text-sm leading-6 text-[#797979]">{step.text}</p>
             </article>
           );

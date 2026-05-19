@@ -1,4 +1,5 @@
 import type { ImageConversionOptions } from "@/types/conversion";
+import type { HeicOutputFormat, RasterOutputFormat } from "@/types/conversion";
 
 export async function convertImageToWebP(
   file: File,
@@ -32,6 +33,59 @@ export async function convertImageToWebP(
   } finally {
     closeBitmap(bitmap);
   }
+}
+
+export async function convertRasterImage(
+  file: File,
+  output: RasterOutputFormat,
+  quality: number,
+): Promise<Blob> {
+  const bitmap = await loadBitmap(file);
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    closeBitmap(bitmap);
+    throw new Error("Canvas is not available in this browser.");
+  }
+
+  try {
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    context.drawImage(bitmap, 0, 0);
+
+    const mimeType = output === "png" ? "image/png" : "image/jpeg";
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, mimeType, output === "png" ? undefined : quality);
+    });
+
+    if (!blob) {
+      throw new Error(`The browser could not export this image as ${output.toUpperCase()}.`);
+    }
+
+    return blob;
+  } finally {
+    closeBitmap(bitmap);
+  }
+}
+
+export async function convertHeicImage(file: File, output: HeicOutputFormat, quality: number): Promise<Blob> {
+  const heic2any = (await import("heic2any")).default;
+  const result = await heic2any({
+    blob: file,
+    toType: output === "png" ? "image/png" : "image/jpeg",
+    quality,
+  });
+  const blob = Array.isArray(result) ? result[0] : result;
+
+  if (!blob) {
+    throw new Error("The HEIC image could not be converted.");
+  }
+
+  return blob;
 }
 
 async function renderToTargetSize({

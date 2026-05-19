@@ -14,7 +14,7 @@ export function Hero({ dictionary }: HeroProps) {
           <span className="h-2 w-2 rounded-full bg-[#FB4D27]" aria-hidden="true" />
           {dictionary.hero.eyebrow}
         </p>
-        <h1 className="mt-6 max-w-3xl text-5xl font-semibold tracking-tight text-[#000000] sm:text-6xl lg:text-7xl">
+        <h1 className="mt-6 max-w-3xl text-5xl font-semibold text-[#000000] sm:text-6xl lg:text-7xl">
           {dictionary.hero.title}
         </h1>
         <p className="mt-6 max-w-2xl text-lg leading-8 text-[#797979] md:text-xl">{dictionary.hero.subtitle}</p>

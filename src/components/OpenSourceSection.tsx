@@ -17,7 +17,7 @@ export function OpenSourceSection({ dictionary }: OpenSourceSectionProps) {
               <ShieldCheck className="h-4 w-4" aria-hidden="true" />
               {dictionary.openSource.eyebrow}
             </p>
-            <h2 className="mt-5 text-3xl font-semibold tracking-tight md:text-4xl">{dictionary.openSource.title}</h2>
+            <h2 className="mt-5 text-3xl font-semibold md:text-4xl">{dictionary.openSource.title}</h2>
             <p className="mt-4 text-base leading-7 text-[#D7E2DD]">{dictionary.openSource.text}</p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row md:flex-col">

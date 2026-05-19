@@ -13,7 +13,7 @@ export function SectionHeader({ eyebrow, title, subtitle, align = "left" }: Sect
           {eyebrow}
         </p>
       ) : null}
-      <h2 className="text-3xl font-semibold tracking-tight text-[#000000] md:text-4xl">{title}</h2>
+      <h2 className="text-3xl font-semibold text-[#000000] md:text-4xl">{title}</h2>
       {subtitle ? <p className="mt-4 text-base leading-7 text-[#797979] md:text-lg">{subtitle}</p> : null}
     </div>
   );
